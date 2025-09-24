@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Estado - Ticketmaster Monitor{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>📊 Estado del Sistema</h1>
+    
+    <div class="stats">
+        <div class="stat-card">
+            <span class="stat-number">{{ active_phones|length }}</span>
+            <div class="stat-label">Números Activos</div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ recent_changes|length }}</span>
+            <div class="stat-label">Cambios Recientes</div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{{ events|length }}</span>
+            <div class="stat-label">Eventos Monitoreados</div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">{% if sms_configured %}✅{% else %}❌{% endif %}</span>
+            <div class="stat-label">SMS Configurado</div>
+        </div>
+    </div>
+    
+    {% if events %}
+    <h2>🎫 Eventos Monitoreados</h2>
+    <div style="margin-bottom: 30px;">
+        {% for event in events %}
+        <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+            <strong>{{ event.event_id }}</strong><br>
+            <small style="color: #666;">
+                URL: {{ event.url }}<br>
+                Última verificación: {{ event.last_checked.strftime('%Y-%m-%d %H:%M:%S') if event.last_checked else 'Nunca' }}
+            </small>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% if recent_changes %}
+    <h2>🔄 Cambios Recientes</h2>
+    <div style="margin-bottom: 30px;">
+        {% for change in recent_changes %}
+        <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin-bottom: 10px; border-left: 4px solid #28a745;">
+            <strong>Evento: {{ change.event_id }}</strong><br>
+            <small style="color: #666;">
+                Fecha: {{ change.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}<br>
+                SMS Enviado: {% if change.sms_sent %}✅ Sí{% else %}❌ No{% endif %}
+            </small>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% if recent_sms %}
+    <h2>📱 SMS Recientes</h2>
+    <div style="margin-bottom: 30px;">
+        {% for sms in recent_sms %}
+        <div style="background: {% if sms.success %}#e8f5e8{% else %}#f8e8e8{% endif %}; padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+            <strong>{{ sms.phone }}</strong><br>
+            <small style="color: #666;">
+                Mensaje: {{ sms.message }}<br>
+                Fecha: {{ sms.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}<br>
+                Estado: {% if sms.success %}✅ Enviado{% else %}❌ Error{% endif %}
+                {% if sms.error_message %}<br>Error: {{ sms.error_message }}{% endif %}
+            </small>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    {% if active_phones %}
+    <h2>📞 Números Registrados</h2>
+    <div>
+        {% for phone in active_phones %}
+        <div style="background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 5px;">
+            <strong>{{ phone.phone }}</strong>
+            <small style="color: #666; float: right;">
+                Registrado: {{ phone.registered_at.strftime('%Y-%m-%d') }}
+            </small>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

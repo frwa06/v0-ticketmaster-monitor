@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  ticketmaster-monitor:
+    build: .
+    container_name: ticketmaster-monitor
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    environment:
+      # Database
+      - DATABASE_URL=sqlite:///data/ticketmaster_monitor.db
+      
+      # Twilio SMS Configuration (REQUIRED for SMS alerts)
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_FROM_NUMBER=${TWILIO_FROM_NUMBER}
+      
+      # Monitoring Configuration
+      - POLL_INTERVAL_MIN=90
+      - POLL_INTERVAL_MAX=150
+      - HEADLESS=true
+      - PAGE_TIMEOUT=30000
+      
+      # Web Server Configuration
+      - WEB_HOST=0.0.0.0
+      - WEB_PORT=8000
+      
+      # Logging
+      - LOG_LEVEL=INFO
+      
+      # Contact Information (for user-agent)
+      - CONTACT_EMAIL=admin@example.com
+      
+    restart: unless-stopped
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/healthz')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  data:
+    driver: local
+  logs:
+    driver: local

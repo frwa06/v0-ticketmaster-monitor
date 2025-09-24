@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block title %}Error - Ticketmaster Monitor{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>❌ Error</h1>
+    <div class="alert alert-error">
+        {{ error }}
+    </div>
+    <a href="/" class="btn">Volver al Inicio</a>
+</div>
+{% endblock %}

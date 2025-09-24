@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Registro - Ticketmaster Monitor{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>🎫 Monitor Ticketmaster</h1>
+    <h2>Registro de Alertas SMS</h2>
+    
+    {% if not sms_configured %}
+    <div class="alert alert-warning">
+        <strong>⚠️ Servicio SMS no configurado</strong><br>
+        Las credenciales de Twilio no están configuradas. Las alertas SMS no funcionarán hasta que se configuren las variables de entorno.
+    </div>
+    {% endif %}
+    
+    <div class="stats">
+        <div class="stat-card">
+            <span class="stat-number">{{ registered_count }}</span>
+            <div class="stat-label">Números Registrados</div>
+        </div>
+        <div class="stat-card">
+            <span class="stat-number">3</span>
+            <div class="stat-label">Eventos Monitoreados</div>
+        </div>
+    </div>
+    
+    <div id="alert-container"></div>
+    
+    <form id="register-form">
+        <div class="form-group">
+            <label for="phone">Número de Teléfono</label>
+            <input 
+                type="tel" 
+                id="phone" 
+                name="phone" 
+                placeholder="+573001234567 o 3001234567"
+                required
+            >
+            <small style="color: #666; font-size: 0.9em;">
+                Formato internacional (+57...) o nacional (300...)
+            </small>
+        </div>
+        
+        <button type="submit" class="btn" id="register-btn">
+            Registrar para Alertas SMS
+        </button>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            Procesando...
+        </div>
+    </form>
+    
+    <form id="unregister-form" style="margin-top: 30px; padding-top: 30px; border-top: 1px solid #eee;">
+        <h2>Cancelar Alertas</h2>
+        <div class="form-group">
+            <label for="unregister-phone">Número a Cancelar</label>
+            <input 
+                type="tel" 
+                id="unregister-phone" 
+                name="phone" 
+                placeholder="+573001234567"
+                required
+            >
+        </div>
+        
+        <button type="submit" class="btn btn-secondary">
+            Cancelar Alertas
+        </button>
+    </form>
+    
+    <div style="margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 8px;">
+        <h3 style="margin-bottom: 15px; color: #495057;">ℹ️ Información del Servicio</h3>
+        <ul style="color: #666; line-height: 1.8;">
+            <li>Monitoreamos continuamente los eventos de Bad Bunny en Ticketmaster</li>
+            <li>Recibirás un SMS cuando se habiliten nuevos sectores</li>
+            <li>El mensaje será: <strong>"Hay cambios en la plataforma"</strong></li>
+            <li>Solo enviamos una alerta por cambio para evitar spam</li>
+            <li>Puedes cancelar las alertas en cualquier momento</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const registerForm = document.getElementById('register-form');
+    const unregisterForm = document.getElementById('unregister-form');
+    const alertContainer = document.getElementById('alert-container');
+    const loading = document.getElementById('loading');
+    const registerBtn = document.getElementById('register-btn');
+    
+    function showAlert(message, type = 'success') {
+        alertContainer.innerHTML = `
+            <div class="alert alert-${type}">
+                ${message}
+            </div>
+        `;
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            alertContainer.innerHTML = '';
+        }, 5000);
+    }
+    
+    function setLoading(isLoading) {
+        if (isLoading) {
+            loading.style.display = 'block';
+            registerBtn.style.display = 'none';
+        } else {
+            loading.style.display = 'none';
+            registerBtn.style.display = 'block';
+        }
+    }
+    
+    registerForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(registerForm);
+        setLoading(true);
+        
+        try {
+            const response = await fetch('/register', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showAlert(`✅ ${result.message}<br>Número: ${result.phone}`, 'success');
+                registerForm.reset();
+                
+                // Update registered count
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            } else {
+                showAlert(`❌ Error: ${result.error}`, 'error');
+            }
+        } catch (error) {
+            showAlert('❌ Error de conexión. Intenta nuevamente.', 'error');
+        } finally {
+            setLoading(false);
+        }
+    });
+    
+    unregisterForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(unregisterForm);
+        
+        try {
+            const response = await fetch('/unregister', {
+                method: 'POST',
+                body: formData
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                showAlert(`✅ ${result.message}`, 'success');
+                unregisterForm.reset();
+                
+                // Update registered count
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            } else {
+                showAlert(`❌ Error: ${result.error}`, 'error');
+            }
+        } catch (error) {
+            showAlert('❌ Error de conexión. Intenta nuevamente.', 'error');
+        }
+    });
+});
+</script>
+{% endblock %}
